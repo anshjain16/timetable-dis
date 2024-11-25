@@ -1,0 +1,109 @@
+<!-- <p>{{class}}</p> -->
+<div class="wrapper">
+    <div class="grid">
+        <div class="timeColumn">
+            <div class="day-name">{{class}}</div>
+            <div *ngFor="let slot of timeSlots" class="slot-value slotHolderGrid">
+                {{slot}}
+            </div>
+        </div>
+        <div *ngFor="let day of days" class="day">
+            <div class="day-name">{{day}}</div>
+            <div *ngFor="let slot of timeSlots" class="timeslot">
+                <!-- <div>{{slot}}</div> -->
+                <div class="slotHolderGrid" (dragover)="allowDrop($event, slot, day)" (drop)="drop($event, slot, day)" [id]="day+'#'+slot" (dragleave)="onDragLeave()">
+                    <div class="slotsss" [id]="day+'#'+slot" *ngIf="uniqueSlotCombinations[day + '#' + slot] && uniqueSlotCombinations[day + '#' + slot].length > 0">
+                        <div
+                            class="slot"
+                            [ngClass]="{
+                                'slot-single-batch': ttSlots[idx].batchwise && ttSlots[idx].batches.length === 1,
+                                'slot-two-batch': ttSlots[idx].batchwise && ttSlots[idx].batches.length === 2,
+                                'slot-full-width': !ttSlots[idx].batchwise
+                            }"
+                            draggable="true"
+                            (dragstart)="drag($event, idx)"
+                            [id]="'slot-' + day + '-' + slot+idx"
+                            *ngFor="let idx of uniqueSlotCombinations[day + '#' + slot]"
+                        >
+                            <div>{{ttSlots[idx].name}}</div>
+                            <div>{{ttSlots[idx].teacher}}</div>
+                            <div *ngIf="ttSlots[idx].batchwise" class="batchSlot">
+                                <span *ngFor="let batch of ttSlots[idx].batches">{{batch}},</span>
+                            </div>
+                            <div>{{ttSlots[idx].room}}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="infoWrapper">
+        <div class="slotHolder" *ngFor="let slot of ttSlots, let index = index">
+            <div class="slot" draggable="true" (dragstart)="drag($event, index)" [id]="'slot'+slot.name+'-'+index+'-'+index2" *ngFor="let i of getNumberArray(toAllocate[index]), let index2 = index">
+                <div>{{slot.name}}</div>
+                <div>{{slot.teacher}},
+                    <span *ngFor="let teacher of additionalTeachers[slot.name]">{{teacher}},</span>
+                </div>
+                <div *ngIf="slot.batchwise" class="batchSlot">
+                    <div *ngFor="let batch of slot.batches">{{batch}},</div>
+                </div>
+                <div>{{slot.room}}</div>
+            </div>
+            <!-- <div class="slot" draggable="true" (dragstart)="drag($event)" id="slot2">slot info2</div> -->
+        </div>
+        <div>
+            <div class="iform">
+                <div >
+                    <div *ngFor="let subject of subjectForSlots" class="moreInfo">
+                        <div>{{subject.name}}</div>
+                        <select name="teacher" id="tselector" #teacher>
+                            <option value="" selected disabled hidden>Choose Faculty</option>
+                            <option *ngFor="let teacher of teachers" [value]="teacher.name">{{teacher.name}}</option>
+                        </select>
+                        <input type="text" placeholder="Add Additional Teacher" #additionalTeacherInput>
+                        <button (click)="addTeacher(subject.name, additionalTeacherInput.value); additionalTeacherInput.value=''">Add Teacher</button>
+
+                        <div *ngIf="additionalTeachers[subject.name]">
+                            <h4>Additional Teachers:</h4>
+                            <ul>
+                                <li *ngFor="let teacher of additionalTeachers[subject.name]">{{teacher}}</li>
+                            </ul>
+                        </div>
+                        <select name="room" id="rselector" #room>
+                            <option value="" selected disabled hidden>Choose Room</option>
+                            <option *ngFor="let room of rooms" [value]="room.name">{{room.name}}</option>
+                        </select>
+                        <select name="lectures" id="lselector" #lectures>
+                            <option value="" selected disabled hidden>Choose lectures per week</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        <label for="batchwise">batchwise: </label>
+                        <input type="checkbox" placeholder="batchwise?" #batchwise [checked] = "subject.batchwise" (change) = "onBatchwiseChange(subject.name, batchwise)">
+                        <div *ngIf="subject.batchwise">
+                            <label for="batches">Enter Batch Names (comma-separated):</label>
+                            <input type="text" [id]="'batch' + subject.name + subject.slot_id" #batches name="batches">
+                        </div>
+                        <button (click)="createSlot(teacher, room, batchwise, lectures, subject)">Make Slot</button>
+                    </div>
+                </div>
+                <label for="course">Select Course: </label>
+                <select name="course" id="cselector" #subject>
+                    <option *ngFor="let subject of availableSubjects" [value]="subject.name">{{subject.name}}</option>
+                </select>
+                <button (click)="addSubject(subject)">Select for slot</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div>
+    <button (click)="saveTimetable()">Save Timetable</button>
+    <button (click)="exportTimetableToExcel()">Export Timetable to Excel</button>
+</div>
+
+
+<div *ngIf="showConflictTooltip" [ngStyle]="{'top.px': tooltipPosition.y, 'left.px': tooltipPosition.x}" class="tooltip">
+    {{ conflictMessage }}
+</div>
